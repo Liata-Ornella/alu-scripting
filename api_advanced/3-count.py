@@ -1,45 +1,43 @@
 #!/usr/bin/python3
-"""
-3-count.py
-Recursively counts keyword occurrences in subreddit hot post titles.
-"""
+"""Recursively count keyword occurrences in subreddit hot post titles."""
 
 import requests
 
 
-def count_words(subreddit, word_list, after=None, counts=None):
-    """Recursively count occurrences of words in hot post titles."""
-    if counts is None:
-        counts = {}
+def count_words(subreddit, word_list, after=None, counter=None):
+    """Count how many times each word in word_list appears in hot titles."""
+    if counter is None:
+        counter = {}
 
     if not subreddit or not isinstance(subreddit, str):
         return
 
     url = "https://www.reddit.com/r/{}/hot.json".format(subreddit)
-    headers = {"User-Agent": "Mozilla/5.0"}
+    headers = {"User-Agent": "ALUStudent:v1.0"}
     params = {"after": after, "limit": 100}
 
-    res = requests.get(url, headers=headers,
-                       params=params, allow_redirects=False)
-    if res.status_code != 200:
+    r = requests.get(url, headers=headers,
+                     params=params, allow_redirects=False)
+    if r.status_code != 200:
         return
 
-    data = res.json().get("data", {})
-    posts = data.get("children", [])
+    data = r.json().get("data", {})
+    children = data.get("children", [])
 
-    for post in posts:
+    for post in children:
         title = post.get("data", {}).get("title", "").lower().split()
         for word in word_list:
             w = word.lower()
-            counts[w] = counts.get(w, 0) + title.count(w)
+            counter[w] = counter.get(w, 0) + title.count(w)
 
-    next_page = data.get("after")
-    if next_page:
-        return count_words(subreddit, word_list, next_page, counts)
+    next_after = data.get("after")
+    if next_after:
+        return count_words(subreddit, word_list, next_after, counter)
 
-    results = [(k, v) for k, v in counts.items() if v > 0]
+    results = [(k, v) for k, v in counter.items() if v > 0]
     if not results:
         return
 
     for w, c in sorted(results, key=lambda x: (-x[1], x[0])):
         print("{}: {}".format(w, c))
+
